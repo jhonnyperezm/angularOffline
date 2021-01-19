@@ -1,4 +1,5 @@
-import { Component, Input, OnInit } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
+import {OnlineOfflineService} from '../service/online-offline.service';
 
 @Component({
   selector: 'app-offline',
@@ -7,12 +8,22 @@ import { Component, Input, OnInit } from '@angular/core';
 })
 export class OfflineComponent implements OnInit {
 
-  @Input() onlineStatusMessage: string;
-  @Input() onlineStatus: string;
+  onlineStatusMessage: string;
+  onlineStatus = true;
 
-  constructor() { }
+  constructor(private onlineOffline: OnlineOfflineService) {
+  }
 
   ngOnInit(): void {
+    this.onlineOffline.connectionChanged.subscribe(async online => {
+      if (online) {
+        this.onlineStatusMessage = 'Back to online';
+        this.onlineStatus = true;
+      } else {
+        this.onlineStatusMessage = 'Connection lost! You are not connected to internet';
+        this.onlineStatus = false;
+      }
+    });
   }
 
 }
