@@ -35,8 +35,8 @@ export class AppComponent implements OnInit, OnDestroy {
       } else {
         const list = await this.productosDBService.getList();
         this.list = [];
-        this.list.push(list);
-        this.listSQL.push(list);
+        this.list = [...list];
+        this.listSQL = [...list];
         console.log(list);
       }
     });
