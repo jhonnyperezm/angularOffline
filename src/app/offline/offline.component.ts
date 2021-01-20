@@ -16,7 +16,7 @@ export class OfflineComponent implements OnInit {
 
   ngOnInit(): void {
     this.onlineOffline.connectionChanged.subscribe(async online => {
-      if (online) {
+      if (navigator.onLine) {
         this.onlineStatusMessage = 'Back to online';
         this.onlineStatus = true;
       } else {
