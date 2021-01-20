@@ -8,6 +8,7 @@ import { ServiceWorkerModule } from '@angular/service-worker';
 import { environment } from '../environments/environment';
 import {HttpClientModule} from '@angular/common/http';
 import {ReactiveFormsModule} from '@angular/forms';
+import {ConnectionServiceModule} from 'ng-connection-service';
 
 @NgModule({
   declarations: [
@@ -18,6 +19,7 @@ import {ReactiveFormsModule} from '@angular/forms';
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
+    ConnectionServiceModule,
     ServiceWorkerModule.register('ngsw-worker.js', {enabled: environment.production}),
     ReactiveFormsModule
   ],

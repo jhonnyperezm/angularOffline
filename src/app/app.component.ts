@@ -5,6 +5,7 @@ import {OnlineOfflineService} from './service/online-offline.service';
 import {ProductosDBService, UsuarioWithID} from './service/productos-db.service';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {catchError} from 'rxjs/operators';
+import {ConnectionService} from 'ng-connection-service';
 
 
 @Component({
@@ -20,19 +21,26 @@ export class AppComponent implements OnInit, OnDestroy {
   public listSQL: any[] = [];
   isOnlineOffline: boolean;
   form: FormGroup;
+  public onlineOffline: boolean = navigator.onLine;
 
   constructor(private api: APIService,
               private fb: FormBuilder,
               private onlineOfflineService: OnlineOfflineService,
+              private connectionService: ConnectionService,
               private productosDBService: ProductosDBService) {
     this.iniciarFormulario();
+    console.log('onlineOffline', this.onlineOffline);
+    this.connectionService.monitor().subscribe(isConnected => {
+      console.log('si es true no tiene ', isConnected);
+    });
   }
 
 
   ngOnInit(): void {
     this.onlineOfflineService.connectionChanged.subscribe(async online => {
       console.log(online);
-      if (online) {
+      console.log('navigator.onLine', navigator.onLine);
+      if (navigator.onLine) {
         this.isOnlineOffline = true;
         this.verificarCreadosOffline();
       } else {

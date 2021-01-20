@@ -25,6 +25,7 @@
     "bootstrap": "^4.6.0",
     "dexie": "^3.0.3",
     "express": "^4.17.1",
+    "ng-connection-service": "^1.0.4",
     "path": "^0.12.7",
     "rxjs": "~6.6.0",
     "tslib": "^2.0.0",
