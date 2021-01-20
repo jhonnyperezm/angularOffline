@@ -4,6 +4,7 @@ import {APIService} from './service/api.service';
 import {OnlineOfflineService} from './service/online-offline.service';
 import {ProductosDBService} from './service/productos-db.service';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {catchError} from 'rxjs/operators';
 
 
 @Component({
@@ -51,12 +52,20 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private getList(): void {
 
-    this.api.getListar().subscribe((resp: any) => {
+    this.api.getListar()
+      .pipe(
+        catchError( async err => {
+          console.error(err.message);
+          console.log('Error is handled');
+          return await this.productosDBService.getList();
+        })
+      )
+      .subscribe((resp: any) => {
       for (const item of resp) {
         this.setListIndexedDB({id: item.id, nombre: item.nombre, email: item.email});
         this.list.push(item);
       }
-    });
+    })
 
 
     // this.api.getListar()
