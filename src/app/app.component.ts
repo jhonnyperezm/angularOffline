@@ -2,7 +2,7 @@ import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {APIService} from './service/api.service';
 import {OnlineOfflineService} from './service/online-offline.service';
-import {ProductosDBService} from './service/productos-db.service';
+import {ProductosDBService, UsuarioWithID} from './service/productos-db.service';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {catchError} from 'rxjs/operators';
 
@@ -18,6 +18,7 @@ export class AppComponent implements OnInit, OnDestroy {
   subscriptions: Subscription[] = [];
   public list: any[] = [];
   public listSQL: any[] = [];
+  isOnlineOffline: boolean;
   form: FormGroup;
 
   constructor(private api: APIService,
@@ -32,12 +33,14 @@ export class AppComponent implements OnInit, OnDestroy {
     this.onlineOfflineService.connectionChanged.subscribe(async online => {
       console.log(online);
       if (online) {
-        this.getList();
+        this.isOnlineOffline = true;
+        this.verificarCreadosOffline();
       } else {
+        this.isOnlineOffline = false;
         const list = await this.productosDBService.getList();
         this.list = [];
         this.list = [...list];
-        this.listSQL = [...list];
+        // this.listSQL = [...list];
         console.log(list);
       }
     });
@@ -51,21 +54,22 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private getList(): void {
-
+    // this.verificarCreadosOffline();
+    this.list = [];
     this.api.getListar()
       .pipe(
-        catchError( async err => {
+        catchError(async err => {
           console.error(err.message);
           console.log('Error is handled');
           return await this.productosDBService.getList();
         })
       )
       .subscribe((resp: any) => {
-      for (const item of resp) {
-        this.setListIndexedDB({id: item.id, nombre: item.nombre, email: item.email});
-        this.list.push(item);
-      }
-    })
+        for (const item of resp) {
+          this.setListIndexedDB({id: item.id, nombre: item.nombre, email: item.email, creado: false});
+          this.list.push(item);
+        }
+      });
 
 
     // this.api.getListar()
@@ -89,28 +93,56 @@ export class AppComponent implements OnInit, OnDestroy {
 
   }
 
-  private setListIndexedDB(list: { email: any; nombre: any; id: any }) {
+  private setListIndexedDB(list: { email: any; nombre: any; id: any, creado: boolean }) {
     return this.productosDBService.setListIndexedDB(list);
   }
 
-  async obetenerDB() {
-    let json: any = await this.productosDBService.getListIndexedDB(this.list.length + 1);
-    delete json.id;
-    this.api.postGuardarResgistro(json).subscribe(resp => {
-      console.log(resp);
-    });
+  async obetenerDB(): Promise<void> {
+
+    if (!this.isOnlineOffline) {
+      window.alert('No tiene conexion para enviar datos');
+      return;
+    }
+
+    let json: UsuarioWithID [] = await this.productosDBService.getAllListIndexedDB();
+    if (json.length > 0) {
+      json = json.filter(e => e.creado !== false);
+    }
+
+    if (this.isOnlineOffline) {
+
+      this.api.postGuardarResgistro(json).subscribe(resp => {
+        console.log(resp);
+      });
+    }
   }
 
-  guardarRegistro() {
-    this.onlineOfflineService.connectionChanged.subscribe( online => {
+  async guardarRegistro() {
+    if (!this.isOnlineOffline) {
       const list = {
-        id: this.list.length + 1,
+        id: (await this.productosDBService.getAllListIndexedDB()).length + 2,
         nombre: this.form.value.nombre,
-        email: this.form.value.email
+        email: this.form.value.email,
+        creado: true
       };
       this.setListIndexedDB(list);
-      this.listSQL.push(list);
-    });
+      this.list.push(list);
+    } else {
+      let json = {
+        nombre: this.form.value.nombre,
+        email: this.form.value.email,
+        id: undefined,
+        creado: undefined,
+
+      };
+      this.api.postGuardarResgistro(json).subscribe(async resp => {
+        console.log(resp);
+        json.id = (await this.productosDBService.getAllListIndexedDB()).length + 1;
+        json.creado = false;
+        this.setListIndexedDB(json);
+        this.list.push(json);
+      });
+    }
   }
 
   private iniciarFormulario() {
@@ -118,5 +150,27 @@ export class AppComponent implements OnInit, OnDestroy {
       nombre: ['', Validators.required],
       email: ['', Validators.required]
     });
+  }
+
+  private async verificarCreadosOffline() {
+    let json: UsuarioWithID [] = await this.productosDBService.getAllListIndexedDB();
+    let auxJson = [];
+    if (json.length > 0) {
+      auxJson = [...json.filter(e => e.creado !== false)];
+    }
+    console.log(auxJson);
+    if(auxJson.length > 0){
+      delete auxJson[0].id;
+      this.api.postGuardarResgistro(auxJson[0]).subscribe(resp => {
+        console.log(resp);
+        this.productosDBService.clearRows();
+        this.getList();
+      });
+    }else{
+      await this.productosDBService.clearRows();
+      this.getList();
+    }
+
+
   }
 }
